@@ -27,10 +27,17 @@ set(BCTOOLBOX_C_SOURCE_FILES
 	vfs.c
 	vconnect.c
 	parser.c
+	
 )
 
-set(BCTOOLBOX_CXX_SOURCE_FILES containers/map.cc)
+set(BCTOOLBOX_CXX_SOURCE_FILES
+	containers/map.cc
+	crypto/ecc.cc
+)
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	list(APPEND STRICT_OPTIONS_CXX "-x c++")
+endif()
 
 if(HAVE_EXECINFO) 
 	list(APPEND BCTOOLBOX_CXX_SOURCE_FILES utils/exception.cc)
@@ -98,7 +105,9 @@ if(ENABLE_SHARED)
 		) 
 	endif()
 	if(WIN32)
-		target_link_libraries(bctoolbox PRIVATE "Winmm" "Ws2_32")
+		if(NOT CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
+			target_link_libraries(bctoolbox PRIVATE "Winmm" "Ws2_32")
+		endif()
 		target_compile_definitions(bctoolbox PRIVATE "-DBCTBX_EXPORTS")
 	endif()
 	set_target_properties(bctoolbox PROPERTIES LINKER_LANGUAGE "CXX")
@@ -168,6 +177,17 @@ if(POLARSSL_FOUND)
 		target_link_libraries(bctoolbox PRIVATE ${POLARSSL_LIBRARIES})
 	endif()
 endif()
+if(DECAF_FOUND)
+	if(ENABLE_STATIC)
+		target_include_directories(bctoolbox-static PUBLIC ${DECAF_INCLUDE_DIRS})
+		target_link_libraries(bctoolbox-static INTERFACE ${DECAF_LIBRARY})
+	endif()
+	if(ENABLE_SHARED)
+		target_include_directories(bctoolbox PUBLIC ${DECAF_INCLUDE_DIRS})
+		target_link_libraries(bctoolbox PRIVATE ${DECAF_LIBRARY})
+	endif()
+endif()
+
 if(BCUNIT_FOUND)
 	if(ENABLE_STATIC)
 		target_include_directories(bctoolbox-tester-static PUBLIC ${BCUNIT_INCLUDE_DIRS})

@@ -20,15 +20,15 @@
 #
 ############################################################################
 
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.2) #since cmake 3.2 is available as a patch for yocto Fido
 set(CMAKE_MACOSX_RPATH ON) # Before cmake 3.0.0, MACOSX_RPATH was not set to ON by default - however this is no good reason to not enable it by default
 
 
 project(bctoolbox)
 
 set(BCTOOLBOX_VERSION_MAJOR 0)
-set(BCTOOLBOX_VERSION_MINOR 5)
-set(BCTOOLBOX_VERSION_PATCH 1)
+set(BCTOOLBOX_VERSION_MINOR 6)
+set(BCTOOLBOX_VERSION_PATCH 0)
 set(BCTOOLBOX_SO_VERSION 1)
 set(BCTOOLBOXTESTER_SO_VERSION 1)
 
@@ -43,6 +43,7 @@ option(ENABLE_SHARED "Build shared library." ON)
 option(ENABLE_STATIC "Build static library." ON)
 option(ENABLE_POLARSSL "Enable polarssl support" ON)
 option(ENABLE_MBEDTLS "Enable mabedtls support" ON)
+option(ENABLE_DECAF "Enable Elliptic Curve Cryptography support" ON)
 option(ENABLE_STRICT "Pass strict flags to the compiler" ON)
 option(ENABLE_TESTS_COMPONENT "Enable compilation of tests helper library" ON)
 option(ENABLE_TESTS "Enable compilation of tests" ON)
@@ -68,8 +69,17 @@ if(ENABLE_MBEDTLS)
 	find_package(MbedTLS)
 	if(MBEDTLS_FOUND)
 		message(STATUS "Using mbedTLS")
+		set(HAVE_MBEDTLS 1)
 	endif()
 endif()
+if(ENABLE_DECAF)
+	find_package(Decaf)
+	if(DECAF_FOUND)
+		message(STATUS "Using Decaf")
+		set(HAVE_DECAF 1)
+	endif()
+endif()
+
 if(ENABLE_POLARSSL AND NOT MBEDTLS_FOUND)
 	find_package(PolarSSL REQUIRED)
 	if(POLARSSL_FOUND)
@@ -148,7 +158,7 @@ if(MSVC)
 	endif()
 else()
 	list(APPEND STRICT_OPTIONS_CPP "-Wall" "-Wuninitialized")
-	if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
+	if(CMAKE_C_COMPILER_ID MATCHES "Clang")
 		list(APPEND STRICT_OPTIONS_CPP "-Wno-error=unknown-warning-option" "-Qunused-arguments" "-Wno-tautological-compare" "-Wno-builtin-requires-header" "-Wno-unused-function" "-Wno-gnu-designator" "-Wno-array-bounds")
 	elseif(CMAKE_C_COMPILER_ID STREQUAL "GNU")
 		list(APPEND STRICT_OPTIONS_CPP "-Wno-error=pragmas")
